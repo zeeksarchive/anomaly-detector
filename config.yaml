@@ -1,0 +1,17 @@
+cookie:
+  expiry_days: 30
+  key: auth_key_123
+  name: anomaly_app
+credentials:
+  usernames:
+    zeeksarchive:
+      email: zeeksarchive@gmail.com
+      logged_in: false
+      name: Ezekiel Stone
+      password: $2b$12$Z33lZjPb4W34N4Nc5i3NnOyKAtXsF1Y69szM4qfbyHa9YVjpk6Jmq
+preauthorized:
+  emails: []
+users:
+  zeeksarchive:
+    name: Ezekiel Stone
+    password: $2b$12$QwllmAIND4CoxadoHKGdhO00onNezSjX1OUNHEtkQ8vCtQ5Ef/EuS
