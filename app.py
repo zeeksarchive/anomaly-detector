@@ -1,18 +1,15 @@
 import streamlit as st
 import pandas as pd
 import anthropic
-import json
 
 st.set_page_config(page_title="Anomaly Detector", page_icon="🔍", layout="wide")
 
 st.title("🔍 Anomaly Detector")
 st.subheader("Upload any data — AI finds what doesn't look right")
 
-api_key = st.text_input("Enter your Anthropic API key", type="password")
-
 uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"])
 
-if uploaded_file and api_key:
+if uploaded_file:
     if uploaded_file.name.endswith(".csv"):
         df = pd.read_csv(uploaded_file)
     else:
@@ -22,7 +19,7 @@ if uploaded_file and api_key:
 
     if st.button("🔍 Detect Anomalies"):
         with st.spinner("Analyzing your data for anomalies..."):
-            client = anthropic.Anthropic(api_key=api_key)
+            client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
 
             data_summary = df.describe().to_string()
             data_sample = df.head(50).to_string()
@@ -56,4 +53,3 @@ Be specific about row numbers and values. Write in plain English for a non-techn
             result = message.content[0].text
             st.write("### 🚨 Anomaly Report")
             st.write(result)
-            
