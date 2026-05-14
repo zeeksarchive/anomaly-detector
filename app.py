@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import anthropic
 
-st.set_page_config(page_title="Anomaly Detector", page_icon="logo.png", layout="wide") page_icon="🔍", layout="wide")
+st.set_page_config(page_title="Anomaly Detector", page_icon="logo.png", layout="wide")
 
 st.title("🔍 Anomaly Detector")
 st.subheader("Upload any data — AI finds what doesn't look right")
