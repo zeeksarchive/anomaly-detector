@@ -2,3 +2,5 @@ streamlit
 anthropic
 pandas
 openpyxl
+bcrypt
+pyyaml
