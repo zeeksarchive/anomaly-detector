@@ -4,6 +4,7 @@ import anthropic
 
 st.set_page_config(page_title="Anomaly Detector", page_icon="logo.png", layout="wide")
 
+st.markdown("""<style>#MainMenu {visibility: hidden;} footer {visibility: hidden;} header {visibility: hidden;}</style>""", unsafe_allow_html=True)
 st.title("🔍 Anomaly Detector")
 st.subheader("Upload any data — AI finds what doesn't look right")
 
