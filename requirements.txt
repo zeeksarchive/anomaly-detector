@@ -4,3 +4,4 @@ pandas
 openpyxl
 bcrypt
 pyyaml
+stripe
