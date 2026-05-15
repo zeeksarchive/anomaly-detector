@@ -80,8 +80,6 @@ if st.session_state.logged_in:
     uses = get_uses(username)
     paid = is_paid(username)
 
-    try:
-
     st.sidebar.write(f"Welcome, **{st.session_state.name}**!")
     if not paid:
         st.sidebar.info(f"Free uses: {uses}/{FREE_LIMIT}")
