@@ -204,11 +204,11 @@ else:
 <h3>Simple Pricing</h3>
 <div class="price">$9<span>/month</span></div>
 <ul>
-<li>✅ 5 free analyses to start</li>
-<li>✅ Unlimited analyses with Pro</li>
-<li>✅ CSV & Excel support</li>
-<li>✅ AI-powered by Claude</li>
-<li>✅ Cancel anytime</li>
+<li>5 free analyses to start</li>
+<li>Unlimited analyses with Pro</li>
+<li>CSV & Excel support</li>
+
+<li>Cancel anytime</li>
 </ul>
 </div>""", unsafe_allow_html=True)
 
