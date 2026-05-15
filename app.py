@@ -19,7 +19,8 @@ header {visibility: hidden;}
 .hero {background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 3rem 2rem; border-radius: 16px; margin-bottom: 2rem; text-align: center; border: 1px solid #0f3460;}
 .hero h1 {font-size: 3rem; color: white; margin-bottom: 0.5rem;}
 .hero p {font-size: 1.2rem; color: #a0aec0; max-width: 600px; margin: 0 auto 1rem;}
-.cta-btn {display: inline-block; margin-top: 1rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border-radius: 8px; font-weight: bold; font-size: 1.1rem; text-decoration: none;}
+.cta-btn {display: inline-block; margin-top: 1rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white !important; border-radius: 8px; font-weight: bold; font-size: 1.1rem; text-decoration: none !important;}
+.cta-btn:hover {color: white !important; text-decoration: none !important;}
 .upgrade-box {background: linear-gradient(135deg, #0f3460, #533483); border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid #7c3aed; margin: 1rem 0;}
 .upgrade-box h3 {color: white; font-size: 1.8rem; margin-bottom: 0.5rem;}
 .upgrade-box p {color: #c4b5fd; font-size: 1.1rem;}
@@ -181,7 +182,7 @@ else:
     st.markdown("""<div class="hero">
 <h1>Anomaly Detector</h1>
 <p>AI-powered data analysis that instantly finds outliers, suspicious patterns, and data quality issues in any CSV or Excel file.</p>
-<a class="cta-btn" href="?signup=true">Get Started Free →</a>
+<a class="cta-btn" href="?signup=true">Get Started Free &rarr;</a>
 </div>""", unsafe_allow_html=True)
 
     if st.query_params.get("signup") == "true":
@@ -208,7 +209,7 @@ else:
 <ul>
 <li>5 free analyses to start</li>
 <li>Unlimited analyses with Pro</li>
-<li>CSV & Excel support</li>
+<li>CSV &amp; Excel support</li>
 <li>Cancel anytime</li>
 </ul>
 </div>""", unsafe_allow_html=True)
