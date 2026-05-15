@@ -19,10 +19,19 @@ header {visibility: hidden;}
 .hero {background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 3rem 2rem; border-radius: 16px; margin-bottom: 2rem; text-align: center; border: 1px solid #0f3460;}
 .hero h1 {font-size: 3rem; color: white; margin-bottom: 0.5rem;}
 .hero p {font-size: 1.2rem; color: #a0aec0; max-width: 600px; margin: 0 auto 1rem;}
+.upgrade-box {background: linear-gradient(135deg, #0f3460, #533483); border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid #7c3aed; margin: 1rem 0;}
+.upgrade-box h3 {color: white; font-size: 1.8rem; margin-bottom: 0.5rem;}
+.upgrade-box p {color: #c4b5fd; font-size: 1.1rem;}
+.feature-grid {display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;}
+.feature-card {background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; text-align: center;}
+.feature-card h4 {color: white; margin-bottom: 0.5rem;}
+.feature-card p {color: #a0aec0; font-size: 0.9rem;}
 div[data-testid="stRadio"] > div {display: flex; gap: 0; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; border: 1px solid #0f3460;}
 div[data-testid="stRadio"] label {flex: 1; text-align: center; padding: 0.6rem 1.5rem; cursor: pointer; color: white; background: #16213e; border: none; margin: 0; white-space: nowrap !important;}
 div[data-testid="stRadio"] label:has(input:checked) {background: #0f3460; font-weight: bold;}
 div[data-testid="stRadio"] input {display: none !important;}
+.stButton > button {background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem;}
+.stButton > button:hover {background: linear-gradient(135deg, #6d28d9, #4338ca); color: white;}
 </style>""", unsafe_allow_html=True)
 
 stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
@@ -71,12 +80,17 @@ if st.session_state.logged_in:
     uses = get_uses(username)
     paid = is_paid(username)
 
-    st.sidebar.write(f"Welcome, {st.session_state.name}!")
+    try:
+        st.sidebar.image("logo.png", width=160)
+    except:
+        st.sidebar.markdown("### 🔍 Anomaly Detector")
+
+    st.sidebar.write(f"Welcome, **{st.session_state.name}**!")
     if not paid:
         st.sidebar.info(f"Free uses: {uses}/{FREE_LIMIT}")
     else:
-        st.sidebar.success("Pro Member ✓")
-    if st.sidebar.button("Logout"):
+        st.sidebar.success("⭐ Pro Member")
+    if st.sidebar.button("Logout", use_container_width=True):
         st.session_state.logged_in = False
         st.session_state.username = ""
         st.session_state.name = ""
@@ -99,29 +113,32 @@ if st.session_state.logged_in:
     st.markdown("---")
 
     if not paid and uses >= FREE_LIMIT:
-        st.warning("You've used all 5 free analyses. Upgrade to Pro for unlimited access!")
-        st.markdown("### 🔓 Upgrade to Anomaly Detector Pro")
-        st.markdown("**$9/month** — Unlimited anomaly detection")
-        if st.button("💳 Upgrade Now — $9/month", use_container_width=True):
-            try:
-                session = stripe.checkout.Session.create(
-                    payment_method_types=["card"],
-                    line_items=[{"price": st.secrets["STRIPE_PRICE_ID"], "quantity": 1}],
-                    mode="subscription",
-                    success_url="https://anomaly-detector-ai.streamlit.app/?paid=true&user=" + username,
-                    cancel_url="https://anomaly-detector-ai.streamlit.app/",
-                    client_reference_id=username,
-                )
-                st.markdown(f'<meta http-equiv="refresh" content="0; url={session.url}">', unsafe_allow_html=True)
-                st.markdown(f"[Click here if not redirected]({session.url})")
-            except Exception as e:
-                st.error(f"Error: {str(e)}")
+        st.markdown("""<div class="upgrade-box">
+<h3>🔓 Unlock Unlimited Access</h3>
+<p>You've used all 5 free analyses. Upgrade to Pro for unlimited anomaly detection.</p>
+</div>""", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1,2,1])
+        with col2:
+            if st.button("✨ Upgrade to Pro — $9/month", use_container_width=True):
+                try:
+                    session = stripe.checkout.Session.create(
+                        payment_method_types=["card"],
+                        line_items=[{"price": st.secrets["STRIPE_PRICE_ID"], "quantity": 1}],
+                        mode="subscription",
+                        success_url="https://anomaly-detector-ai.streamlit.app/?paid=true&user=" + username,
+                        cancel_url="https://anomaly-detector-ai.streamlit.app/",
+                        client_reference_id=username,
+                    )
+                    st.markdown(f'<meta http-equiv="refresh" content="0; url={session.url}">', unsafe_allow_html=True)
+                    st.markdown(f"[Click here if not redirected]({session.url})")
+                except Exception as e:
+                    st.error(f"Error: {str(e)}")
     else:
         params = st.query_params
         if params.get("paid") == "true" and params.get("user") == username:
             config["users"][username]["paid"] = True
             save_config()
-            st.success("Payment successful! You now have unlimited access.")
+            st.success("🎉 Payment successful! You now have unlimited access.")
             st.query_params.clear()
             st.rerun()
 
@@ -135,7 +152,7 @@ if st.session_state.logged_in:
 
             st.write("### Your Data", df)
 
-            if st.button("🔍 Detect Anomalies"):
+            if st.button("🔍 Detect Anomalies", use_container_width=True):
                 if not paid and uses >= FREE_LIMIT:
                     st.error("You've reached the free limit. Please upgrade.")
                 else:
@@ -154,15 +171,32 @@ if st.session_state.logged_in:
                     if not paid:
                         remaining = FREE_LIMIT - get_uses(username)
                         if remaining > 0:
-                            st.info(f"You have {remaining} free analyses remaining.")
+                            st.info(f"You have {remaining} free {'analysis' if remaining == 1 else 'analyses'} remaining.")
                         else:
                             st.warning("That was your last free analysis! Upgrade to Pro for unlimited access.")
 
 else:
     st.markdown("""<div class="hero">
 <h1>🔍 Anomaly Detector</h1>
-<p>Upload any CSV or Excel file and AI instantly finds outliers, suspicious patterns, and data quality issues.</p>
+<p>AI-powered data analysis that instantly finds outliers, suspicious patterns, and data quality issues in any CSV or Excel file.</p>
 </div>""", unsafe_allow_html=True)
+
+    st.markdown("""<div class="feature-grid">
+<div class="feature-card">
+<h4>⚡ Instant Analysis</h4>
+<p>Upload your file and get a full anomaly report in seconds powered by Claude AI.</p>
+</div>
+<div class="feature-card">
+<h4>📊 Any Data Format</h4>
+<p>Works with CSV and Excel files of any size or structure.</p>
+</div>
+<div class="feature-card">
+<h4>🎯 Plain English Reports</h4>
+<p>No jargon. Clear, specific findings with exact row numbers.</p>
+</div>
+</div>""", unsafe_allow_html=True)
+
+    st.markdown("---")
 
     mode = st.radio("", ["Login", "Sign Up"], horizontal=True)
 
