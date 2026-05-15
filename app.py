@@ -22,6 +22,9 @@ header {visibility: hidden;}
 .upgrade-box {background: linear-gradient(135deg, #0f3460, #533483); border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid #7c3aed; margin: 1rem 0;}
 .upgrade-box h3 {color: white; font-size: 1.8rem; margin-bottom: 0.5rem;}
 .upgrade-box p {color: #c4b5fd; font-size: 1.1rem;}
+.stat-card {background: #16213e; border-radius: 12px; padding: 1.2rem; border: 1px solid #0f3460; text-align: center;}
+.stat-card .stat-num {font-size: 2rem; font-weight: bold; color: #7c3aed;}
+.stat-card .stat-label {font-size: 0.85rem; color: #a0aec0; margin-top: 0.2rem;}
 .feature-grid {display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;}
 .feature-card {background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; text-align: center;}
 .feature-card h4 {color: white; margin-bottom: 0.5rem;}
@@ -77,6 +80,12 @@ def increment_uses(username):
     config["users"][username]["uses"] = get_uses(username) + 1
     save_config()
 
+def get_total_uses():
+    return sum(u.get("uses", 0) for u in config["users"].values())
+
+def get_total_users():
+    return len(config["users"])
+
 FREE_LIMIT = 5
 
 if st.session_state.logged_in:
@@ -101,6 +110,29 @@ if st.session_state.logged_in:
 <h1>🔍 Anomaly Detector</h1>
 <p>Upload any CSV or Excel file and AI instantly finds outliers, suspicious patterns, and data quality issues.</p>
 </div>""", unsafe_allow_html=True)
+
+    total_users = get_total_users()
+    total_analyses = get_total_uses()
+    user_analyses = uses
+
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.markdown(f"""<div class="stat-card">
+<div class="stat-num">{total_users:,}</div>
+<div class="stat-label">Total Users</div>
+</div>""", unsafe_allow_html=True)
+    with col2:
+        st.markdown(f"""<div class="stat-card">
+<div class="stat-num">{total_analyses:,}</div>
+<div class="stat-label">Analyses Run</div>
+</div>""", unsafe_allow_html=True)
+    with col3:
+        st.markdown(f"""<div class="stat-card">
+<div class="stat-num">{user_analyses}</div>
+<div class="stat-label">Your Analyses</div>
+</div>""", unsafe_allow_html=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
 
     with st.expander("👀 See a sample report before uploading"):
         st.markdown("""**Sample Report**
@@ -143,7 +175,8 @@ if st.session_state.logged_in:
             st.query_params.clear()
             st.rerun()
 
-        uploaded_file = st.file_uploader("📂 Upload a CSV or Excel file", type=["csv", "xlsx"])
+        st.markdown("### 📂 Upload your file to get started")
+        uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"])
 
         if uploaded_file:
             if uploaded_file.name.endswith(".csv"):
