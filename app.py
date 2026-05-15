@@ -359,6 +359,21 @@ if st.session_state.logged_in:
                             st.info(f"You have {remaining} free {'analysis' if remaining == 1 else 'analyses'} remaining.")
                         else:
                             st.warning("That was your last free analysis! Upgrade to Pro for unlimited access.")
+                    col1, col2, col3 = st.columns([1,2,1])
+                    with col2:
+                        if st.button("✨ Upgrade to Pro — $9/month", use_container_width=True, key="upgrade_inline"):
+                            try:
+                                session = stripe.checkout.Session.create(
+                                    payment_method_types=["card"],
+                                    line_items=[{"price": st.secrets["STRIPE_PRICE_ID"], "quantity": 1}],
+                                    mode="subscription",
+                                    success_url="https://anomaly-detector-ai.streamlit.app/?paid=true&user=" + username,
+                                    cancel_url="https://anomaly-detector-ai.streamlit.app/",
+                                    client_reference_id=username,
+                                )
+                                st.markdown(f'<meta http-equiv="refresh" content="0; url={session.url}">', unsafe_allow_html=True)
+                            except Exception as e:
+                                st.error(f"Error: {str(e)}")
 
 else:
     st.markdown("""<div class="hero"><h1>Anomaly Detector</h1><p>AI-powered data analysis that instantly finds outliers, suspicious patterns, and data quality issues in any CSV or Excel file.</p></div>""", unsafe_allow_html=True)
