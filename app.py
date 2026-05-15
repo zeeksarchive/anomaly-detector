@@ -81,9 +81,6 @@ if st.session_state.logged_in:
     paid = is_paid(username)
 
     try:
-        st.sidebar.image("logo.png", width=160)
-    except:
-        st.sidebar.markdown("### 🔍 Anomaly Detector")
 
     st.sidebar.write(f"Welcome, **{st.session_state.name}**!")
     if not paid:
