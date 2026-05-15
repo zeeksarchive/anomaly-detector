@@ -207,7 +207,7 @@ if st.session_state.logged_in:
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
     else:
-        if params.get("paid") == "true" and params.get("user") == username:
+        if params.get("paid") == "true" and params.get("user") == username and st.session_state.logged_in:
             update_user(username, {"paid": True})
             st.success("🎉 Payment successful! You now have unlimited access.")
             st.query_params.clear()
