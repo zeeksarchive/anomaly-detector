@@ -22,7 +22,7 @@ header {visibility: hidden;}
 .upgrade-box {background: linear-gradient(135deg, #0f3460, #533483); border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid #7c3aed; margin: 1rem 0;}
 .upgrade-box h3 {color: white; font-size: 1.8rem; margin-bottom: 0.5rem;}
 .upgrade-box p {color: #c4b5fd; font-size: 1.1rem;}
-.feature-grid {display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;}
+.feature-grid {display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;} @media (max-width: 768px) { .feature-grid {grid-template-columns: 1fr;} }
 .feature-card {background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; text-align: center;}
 .feature-card h4 {color: white; margin-bottom: 0.5rem;}
 .feature-card p {color: #a0aec0; font-size: 0.9rem;}
