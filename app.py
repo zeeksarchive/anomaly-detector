@@ -19,10 +19,11 @@ header {visibility: hidden;}
 .hero {background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 3rem 2rem; border-radius: 16px; margin-bottom: 2rem; text-align: center; border: 1px solid #0f3460;}
 .hero h1 {font-size: 3rem; color: white; margin-bottom: 0.5rem;}
 .hero p {font-size: 1.2rem; color: #a0aec0; max-width: 600px; margin: 0 auto 1rem;}
+.cta-btn {display: inline-block; margin-top: 1rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border-radius: 8px; font-weight: bold; font-size: 1.1rem; text-decoration: none;}
 .upgrade-box {background: linear-gradient(135deg, #0f3460, #533483); border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid #7c3aed; margin: 1rem 0;}
 .upgrade-box h3 {color: white; font-size: 1.8rem; margin-bottom: 0.5rem;}
 .upgrade-box p {color: #c4b5fd; font-size: 1.1rem;}
-.feature-grid {display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;} @media (max-width: 768px) { .feature-grid {grid-template-columns: 1fr;} }
+.feature-grid {display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 2rem 0;}
 .feature-card {background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; text-align: center;}
 .feature-card h4 {color: white; margin-bottom: 0.5rem;}
 .feature-card p {color: #a0aec0; font-size: 0.9rem;}
@@ -32,6 +33,7 @@ header {visibility: hidden;}
 .pricing-box .price span {font-size: 1rem; color: #a0aec0;}
 .pricing-box ul {list-style: none; padding: 0; color: #a0aec0; margin: 1rem 0;}
 .pricing-box ul li {padding: 0.3rem 0;}
+@media (max-width: 768px) { .feature-grid {grid-template-columns: 1fr;} }
 .stButton > button {background: linear-gradient(135deg, #7c3aed, #4f46e5) !important; color: white !important; border: none !important; border-radius: 8px !important; font-weight: bold !important; font-size: 1rem !important;}
 .stButton > button:hover {background: linear-gradient(135deg, #6d28d9, #4338ca) !important; color: white !important;}
 [data-testid="stFileUploader"] {border: 2px dashed #7c3aed !important; border-radius: 12px !important; padding: 1rem !important;}
@@ -177,9 +179,13 @@ if st.session_state.logged_in:
 
 else:
     st.markdown("""<div class="hero">
-<h1>🔍 Anomaly Detector</h1>
+<h1>Anomaly Detector</h1>
 <p>AI-powered data analysis that instantly finds outliers, suspicious patterns, and data quality issues in any CSV or Excel file.</p>
+<a class="cta-btn" href="?signup=true">Get Started Free →</a>
 </div>""", unsafe_allow_html=True)
+
+    if st.query_params.get("signup") == "true":
+        st.session_state.auth_mode = "Sign Up"
 
     st.markdown("""<div class="feature-grid">
 <div class="feature-card">
