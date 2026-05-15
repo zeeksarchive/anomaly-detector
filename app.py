@@ -19,8 +19,6 @@ header {visibility: hidden;}
 .hero {background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 3rem 2rem; border-radius: 16px; margin-bottom: 2rem; text-align: center; border: 1px solid #0f3460;}
 .hero h1 {font-size: 3rem; color: white; margin-bottom: 0.5rem;}
 .hero p {font-size: 1.2rem; color: #a0aec0; max-width: 600px; margin: 0 auto 1rem;}
-.cta-btn {display: inline-block; margin-top: 1rem; padding: 0.75rem 2rem; background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white !important; border-radius: 8px; font-weight: bold; font-size: 1.1rem; text-decoration: none !important;}
-.cta-btn:hover {color: white !important; text-decoration: none !important;}
 .upgrade-box {background: linear-gradient(135deg, #0f3460, #533483); border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid #7c3aed; margin: 1rem 0;}
 .upgrade-box h3 {color: white; font-size: 1.8rem; margin-bottom: 0.5rem;}
 .upgrade-box p {color: #c4b5fd; font-size: 1.1rem;}
@@ -182,11 +180,51 @@ else:
     st.markdown("""<div class="hero">
 <h1>Anomaly Detector</h1>
 <p>AI-powered data analysis that instantly finds outliers, suspicious patterns, and data quality issues in any CSV or Excel file.</p>
-<a class="cta-btn" href="?signup=true">Get Started Free &rarr;</a>
 </div>""", unsafe_allow_html=True)
 
-    if st.query_params.get("signup") == "true":
-        st.session_state.auth_mode = "Sign Up"
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Login", use_container_width=True, key="tab_login"):
+            st.session_state.auth_mode = "Login"
+    with col2:
+        if st.button("Sign Up", use_container_width=True, key="tab_signup"):
+            st.session_state.auth_mode = "Sign Up"
+
+    mode = st.session_state.auth_mode
+
+    if mode == "Login":
+        st.subheader("Login")
+        username = st.text_input("Username", key="login_user")
+        password = st.text_input("Password", type="password", key="login_pass")
+        if st.button("Login", use_container_width=True, key="login_submit"):
+            user = config["users"].get(username)
+            if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.session_state.name = user.get("name", username)
+                st.rerun()
+            else:
+                st.error("Invalid username or password.")
+    else:
+        st.subheader("Create Account")
+        name = st.text_input("Full Name", key="signup_name")
+        username = st.text_input("Username", key="signup_user")
+        password = st.text_input("Password", type="password", key="signup_pass")
+        if st.button("Create Account", use_container_width=True, key="signup_submit"):
+            if username in config["users"]:
+                st.error("Username already exists.")
+            elif not username or not password or not name:
+                st.error("Please fill in all fields.")
+            else:
+                hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                config["users"][username] = {"name": name, "password": hashed, "uses": 0, "paid": False}
+                save_config()
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.session_state.name = name
+                st.rerun()
+
+    st.markdown("---")
 
     st.markdown("""<div class="feature-grid">
 <div class="feature-card">
@@ -213,48 +251,3 @@ else:
 <li>Cancel anytime</li>
 </ul>
 </div>""", unsafe_allow_html=True)
-
-    st.markdown("---")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Login", use_container_width=True, key="tab_login"):
-            st.session_state.auth_mode = "Login"
-    with col2:
-        if st.button("Sign Up", use_container_width=True, key="tab_signup"):
-            st.session_state.auth_mode = "Sign Up"
-
-    mode = st.session_state.auth_mode
-
-    if mode == "Login":
-        st.subheader("Login")
-        username = st.text_input("Username", key="login_user")
-        password = st.text_input("Password", type="password", key="login_pass")
-        if st.button("Login", use_container_width=True, key="login_submit"):
-            user = config["users"].get(username)
-            if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.session_state.name = user.get("name", username)
-                st.rerun()
-            else:
-                st.error("Invalid username or password.")
-
-    else:
-        st.subheader("Create Account")
-        name = st.text_input("Full Name", key="signup_name")
-        username = st.text_input("Username", key="signup_user")
-        password = st.text_input("Password", type="password", key="signup_pass")
-        if st.button("Create Account", use_container_width=True, key="signup_submit"):
-            if username in config["users"]:
-                st.error("Username already exists.")
-            elif not username or not password or not name:
-                st.error("Please fill in all fields.")
-            else:
-                hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-                config["users"][username] = {"name": name, "password": hashed, "uses": 0, "paid": False}
-                save_config()
-                st.session_state.logged_in = True
-                st.session_state.username = username
-                st.session_state.name = name
-                st.rerun()
