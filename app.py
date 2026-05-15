@@ -1,15 +1,13 @@
 import streamlit as st
 import pandas as pd
 import anthropic
-import yaml
-from yaml.loader import SafeLoader
-import os
 import bcrypt
 import stripe
 import sendgrid
 from sendgrid.helpers.mail import Mail
 import secrets
 import time
+from supabase import create_client
 
 st.set_page_config(page_title="Anomaly Detector", page_icon="🔍", layout="wide")
 
@@ -46,18 +44,57 @@ header {visibility: hidden;}
 </style>""", unsafe_allow_html=True)
 
 stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
+supabase = create_client(st.secrets["SUPABASE_URL"], st.secrets["SUPABASE_KEY"])
 
-CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
+def get_user(username):
+    r = supabase.table("users").select("*").eq("username", username).execute()
+    return r.data[0] if r.data else None
 
-if not os.path.exists(CONFIG_FILE):
-    with open(CONFIG_FILE, "w") as f:
-        yaml.dump({"users": {}}, f)
+def get_user_by_email(email):
+    r = supabase.table("users").select("*").eq("email", email).execute()
+    return r.data[0] if r.data else None
 
-with open(CONFIG_FILE) as f:
-    config = yaml.load(f, Loader=SafeLoader) or {"users": {}}
+def create_user(username, name, email, password):
+    hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+    token = secrets.token_urlsafe(32)
+    supabase.table("users").insert({
+        "username": username, "name": name, "email": email,
+        "password": hashed, "uses": 0, "paid": False,
+        "verified": False, "verify_token": token
+    }).execute()
+    return token
 
-if "users" not in config:
-    config["users"] = {}
+def update_user(username, data):
+    supabase.table("users").update(data).eq("username", username).execute()
+
+def get_total_users():
+    r = supabase.table("users").select("username", count="exact").execute()
+    return r.count or 0
+
+def get_total_uses():
+    r = supabase.table("users").select("uses").execute()
+    return sum(u["uses"] for u in r.data) if r.data else 0
+
+def send_email(to_email, subject, body):
+    try:
+        sg = sendgrid.SendGridAPIClient(api_key=st.secrets["SENDGRID_API_KEY"])
+        message = Mail(from_email=st.secrets["SENDGRID_FROM_EMAIL"], to_emails=to_email, subject=subject, html_content=body)
+        sg.send(message)
+        return True
+    except:
+        return False
+
+def send_verification_email(email, username, token):
+    link = f"https://anomaly-detector-ai.streamlit.app/?verify={token}&user={username}"
+    body = f'<h2>Verify your Anomaly Detector account</h2><p>Click below to verify your email:</p><a href="{link}" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Verify Email</a>'
+    return send_email(email, "Verify your Anomaly Detector account", body)
+
+def send_reset_email(email, username, token):
+    link = f"https://anomaly-detector-ai.streamlit.app/?reset={token}&user={username}"
+    body = f'<h2>Reset your Anomaly Detector password</h2><p>Click below to reset your password. Expires in 1 hour.</p><a href="{link}" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Reset Password</a>'
+    return send_email(email, "Reset your Anomaly Detector password", body)
+
+FREE_LIMIT = 5
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
@@ -67,87 +104,25 @@ if "logged_in" not in st.session_state:
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "Login"
 
-def save_config():
-    with open(CONFIG_FILE, "w") as f:
-        yaml.dump(config, f)
-
-def get_user(username):
-    return config["users"].get(username, {})
-
-def is_paid(username):
-    return get_user(username).get("paid", False)
-
-def get_uses(username):
-    return get_user(username).get("uses", 0)
-
-def increment_uses(username):
-    config["users"][username]["uses"] = get_uses(username) + 1
-    save_config()
-
-def get_total_uses():
-    return sum(u.get("uses", 0) for u in config["users"].values())
-
-def get_total_users():
-    return len(config["users"])
-
-def send_email(to_email, subject, body):
-    try:
-        sg = sendgrid.SendGridAPIClient(api_key=st.secrets["SENDGRID_API_KEY"])
-        message = Mail(
-            from_email=st.secrets["SENDGRID_FROM_EMAIL"],
-            to_emails=to_email,
-            subject=subject,
-            html_content=body
-        )
-        sg.send(message)
-        return True
-    except Exception as e:
-        return False
-
-def send_verification_email(email, username, token):
-    link = f"https://anomaly-detector-ai.streamlit.app/?verify={token}&user={username}"
-    body = f"""
-    <h2>Verify your Anomaly Detector account</h2>
-    <p>Click the link below to verify your email address:</p>
-    <a href="{link}" style="background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Verify Email</a>
-    <p>If you didn't create this account, ignore this email.</p>
-    """
-    return send_email(email, "Verify your Anomaly Detector account", body)
-
-def send_reset_email(email, username, token):
-    link = f"https://anomaly-detector-ai.streamlit.app/?reset={token}&user={username}"
-    body = f"""
-    <h2>Reset your Anomaly Detector password</h2>
-    <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-    <a href="{link}" style="background: #7c3aed; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold;">Reset Password</a>
-    <p>If you didn't request this, ignore this email.</p>
-    """
-    return send_email(email, "Reset your Anomaly Detector password", body)
-
-FREE_LIMIT = 5
-
-# Handle email verification
 params = st.query_params
+
 if params.get("verify") and params.get("user"):
     token = params.get("verify")
     username = params.get("user")
-    user = config["users"].get(username, {})
-    if user.get("verify_token") == token:
-        config["users"][username]["verified"] = True
-        config["users"][username].pop("verify_token", None)
-        save_config()
-        st.success("✅ Email verified! You can now log in.")
+    user = get_user(username)
+    if user and user.get("verify_token") == token:
+        update_user(username, {"verified": True, "verify_token": None})
+        st.success("Email verified! You can now log in.")
         st.query_params.clear()
     else:
         st.error("Invalid or expired verification link.")
 
-# Handle password reset
 if params.get("reset") and params.get("user"):
     token = params.get("reset")
     username = params.get("user")
-    user = config["users"].get(username, {})
-    if user.get("reset_token") == token and time.time() - user.get("reset_time", 0) < 3600:
-        st.markdown("### 🔑 Reset Your Password")
+    user = get_user(username)
+    if user and user.get("reset_token") == token and time.time() - (user.get("reset_time") or 0) < 3600:
+        st.markdown("### Reset Your Password")
         new_password = st.text_input("New Password", type="password", key="new_pass")
         confirm_password = st.text_input("Confirm Password", type="password", key="confirm_pass")
         if st.button("Reset Password", use_container_width=True):
@@ -157,10 +132,7 @@ if params.get("reset") and params.get("user"):
                 st.error("Password must be at least 6 characters.")
             else:
                 hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-                config["users"][username]["password"] = hashed
-                config["users"][username].pop("reset_token", None)
-                config["users"][username].pop("reset_time", None)
-                save_config()
+                update_user(username, {"password": hashed, "reset_token": None, "reset_time": None})
                 st.success("Password reset! You can now log in.")
                 st.query_params.clear()
         st.stop()
@@ -170,8 +142,9 @@ if params.get("reset") and params.get("user"):
 
 if st.session_state.logged_in:
     username = st.session_state.username
-    uses = get_uses(username)
-    paid = is_paid(username)
+    user = get_user(username)
+    uses = user["uses"] if user else 0
+    paid = user["paid"] if user else False
 
     st.sidebar.markdown("## 🔍 Anomaly Detector")
     st.sidebar.markdown("---")
@@ -193,24 +166,14 @@ if st.session_state.logged_in:
 
     total_users = get_total_users() + 1247
     total_analyses = get_total_uses() + 3891
-    user_analyses = uses
 
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.markdown(f"""<div class="stat-card">
-<div class="stat-num">{total_users:,}</div>
-<div class="stat-label">Total Users</div>
-</div>""", unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num">{total_users:,}</div><div class="stat-label">Total Users</div></div>', unsafe_allow_html=True)
     with col2:
-        st.markdown(f"""<div class="stat-card">
-<div class="stat-num">{total_analyses:,}</div>
-<div class="stat-label">Analyses Run</div>
-</div>""", unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num">{total_analyses:,}</div><div class="stat-label">Analyses Run</div></div>', unsafe_allow_html=True)
     with col3:
-        st.markdown(f"""<div class="stat-card">
-<div class="stat-num">{user_analyses}</div>
-<div class="stat-label">Your Analyses</div>
-</div>""", unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num">{uses}</div><div class="stat-label">Your Analyses</div></div>', unsafe_allow_html=True)
 
     st.markdown("<br>", unsafe_allow_html=True)
 
@@ -226,10 +189,7 @@ if st.session_state.logged_in:
     st.markdown("---")
 
     if not paid and uses >= FREE_LIMIT:
-        st.markdown("""<div class="upgrade-box">
-<h3>🔓 Unlock Unlimited Access</h3>
-<p>You've used all 5 free analyses. Upgrade to Pro for unlimited anomaly detection.</p>
-</div>""", unsafe_allow_html=True)
+        st.markdown("""<div class="upgrade-box"><h3>🔓 Unlock Unlimited Access</h3><p>You've used all 5 free analyses. Upgrade to Pro for unlimited anomaly detection.</p></div>""", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1,2,1])
         with col2:
             if st.button("✨ Upgrade to Pro — $9/month", use_container_width=True):
@@ -247,10 +207,8 @@ if st.session_state.logged_in:
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
     else:
-        params = st.query_params
         if params.get("paid") == "true" and params.get("user") == username:
-            config["users"][username]["paid"] = True
-            save_config()
+            update_user(username, {"paid": True})
             st.success("🎉 Payment successful! You now have unlimited access.")
             st.query_params.clear()
             st.rerun()
@@ -271,7 +229,7 @@ if st.session_state.logged_in:
                     st.error("You've reached the free limit. Please upgrade.")
                 else:
                     with st.spinner("Analyzing your data for anomalies..."):
-                        increment_uses(username)
+                        update_user(username, {"uses": uses + 1})
                         client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
                         data_summary = df.describe().to_string()
                         data_sample = df.head(50).to_string()
@@ -282,18 +240,15 @@ if st.session_state.logged_in:
                         )
                     st.markdown("### 🧠 Anomaly Report")
                     st.markdown(message.content[0].text)
+                    remaining = FREE_LIMIT - (uses + 1)
                     if not paid:
-                        remaining = FREE_LIMIT - get_uses(username)
                         if remaining > 0:
                             st.info(f"You have {remaining} free {'analysis' if remaining == 1 else 'analyses'} remaining.")
                         else:
                             st.warning("That was your last free analysis! Upgrade to Pro for unlimited access.")
 
 else:
-    st.markdown("""<div class="hero">
-<h1>Anomaly Detector</h1>
-<p>AI-powered data analysis that instantly finds outliers, suspicious patterns, and data quality issues in any CSV or Excel file.</p>
-</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="hero"><h1>Anomaly Detector</h1><p>AI-powered data analysis that instantly finds outliers, suspicious patterns, and data quality issues in any CSV or Excel file.</p></div>""", unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
@@ -310,11 +265,11 @@ else:
         username = st.text_input("Username", key="login_user")
         password = st.text_input("Password", type="password", key="login_pass")
         if st.button("Login", use_container_width=True, key="login_submit"):
-            user = config["users"].get(username)
+            user = get_user(username)
             if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
                 st.session_state.logged_in = True
                 st.session_state.username = username
-                st.session_state.name = user.get("name", username)
+                st.session_state.name = user["name"]
                 st.rerun()
             else:
                 st.error("Invalid username or password.")
@@ -322,17 +277,11 @@ else:
         st.markdown("**Forgot your password?**")
         reset_email = st.text_input("Enter your email to reset password", key="reset_email")
         if st.button("Send Reset Link", use_container_width=True, key="reset_btn"):
-            found = None
-            for uname, udata in config["users"].items():
-                if udata.get("email") == reset_email:
-                    found = uname
-                    break
-            if found:
+            user = get_user_by_email(reset_email)
+            if user:
                 token = secrets.token_urlsafe(32)
-                config["users"][found]["reset_token"] = token
-                config["users"][found]["reset_time"] = time.time()
-                save_config()
-                if send_reset_email(reset_email, found, token):
+                update_user(user["username"], {"reset_token": token, "reset_time": time.time()})
+                if send_reset_email(reset_email, user["username"], token):
                     st.success("Reset link sent! Check your email.")
                 else:
                     st.error("Failed to send email. Try again.")
@@ -346,25 +295,15 @@ else:
         email = st.text_input("Email", key="signup_email")
         password = st.text_input("Password", type="password", key="signup_pass")
         if st.button("Create Account", use_container_width=True, key="signup_submit"):
-            if username in config["users"]:
-                st.error("Username already exists.")
-            elif not username or not password or not name or not email:
+            if not username or not password or not name or not email:
                 st.error("Please fill in all fields.")
+            elif get_user(username):
+                st.error("Username already exists.")
+            elif get_user_by_email(email):
+                st.error("Email already registered.")
             else:
-                hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-                token = secrets.token_urlsafe(32)
-                config["users"][username] = {
-                    "name": name,
-                    "password": hashed,
-                    "email": email,
-                    "uses": 0,
-                    "paid": False,
-                    "verified": False,
-                    "verify_token": token
-                }
-                save_config()
+                token = create_user(username, name, email, password)
                 send_verification_email(email, username, token)
-                st.success("Account created! Check your email to verify your account.")
                 st.session_state.logged_in = True
                 st.session_state.username = username
                 st.session_state.name = name
@@ -373,27 +312,9 @@ else:
     st.markdown("---")
 
     st.markdown("""<div class="feature-grid">
-<div class="feature-card">
-<h4>⚡ Instant Analysis</h4>
-<p>Upload your file and get a full anomaly report in seconds.</p>
-</div>
-<div class="feature-card">
-<h4>📊 Any Data Format</h4>
-<p>Works with CSV and Excel files of any size or structure.</p>
-</div>
-<div class="feature-card">
-<h4>🎯 Plain English Reports</h4>
-<p>No jargon. Clear, specific findings with exact row numbers.</p>
-</div>
+<div class="feature-card"><h4>⚡ Instant Analysis</h4><p>Upload your file and get a full anomaly report in seconds.</p></div>
+<div class="feature-card"><h4>📊 Any Data Format</h4><p>Works with CSV and Excel files of any size or structure.</p></div>
+<div class="feature-card"><h4>🎯 Plain English Reports</h4><p>No jargon. Clear, specific findings with exact row numbers.</p></div>
 </div>""", unsafe_allow_html=True)
 
-    st.markdown("""<div class="pricing-box">
-<h3>Simple Pricing</h3>
-<div class="price">$9<span>/month</span></div>
-<ul>
-<li>5 free analyses to start</li>
-<li>Unlimited analyses with Pro</li>
-<li>CSV &amp; Excel support</li>
-<li>Cancel anytime</li>
-</ul>
-</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="pricing-box"><h3>Simple Pricing</h3><div class="price">$9<span>/month</span></div><ul><li>5 free analyses to start</li><li>Unlimited analyses with Pro</li><li>CSV &amp; Excel support</li><li>Cancel anytime</li></ul></div>""", unsafe_allow_html=True)
