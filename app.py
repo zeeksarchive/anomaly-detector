@@ -94,12 +94,117 @@ def send_reset_email(email, username, token):
     body = f'<h2>Reset your Anomaly Detector password</h2><p>Click below to reset your password. Expires in 1 hour.</p><a href="{link}" style="background:#7c3aed;color:white;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:bold;">Reset Password</a>'
     return send_email(email, "Reset your Anomaly Detector password", body)
 
+
+LANDING_PAGE_HTML = """
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap');
+.lp-wrap{font-family:'DM Sans',sans-serif;background:#0a0a12;color:#e8e6f0;margin:-1rem;padding:0}
+.lp-hero{min-height:90vh;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:4rem 2rem;background:radial-gradient(ellipse 80% 60% at 50% 0%,#1a1040 0%,#0a0a12 70%)}
+.lp-badge{display:inline-block;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.4);color:#a78bfa;font-size:.78rem;font-weight:500;letter-spacing:.08em;text-transform:uppercase;padding:.35rem 1rem;border-radius:999px;margin-bottom:1.5rem}
+.lp-h1{font-family:'Syne',sans-serif;font-size:clamp(2.4rem,6vw,4.2rem);font-weight:800;line-height:1.08;margin:0 0 1.2rem;max-width:780px;background:linear-gradient(135deg,#fff 0%,#c4b5fd 60%,#7c3aed 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.lp-sub{font-size:1.15rem;color:#9b97b2;max-width:520px;line-height:1.7;margin:0 auto 2.5rem}
+.lp-cta-row{display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:3rem}
+.lp-btn-primary{background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;border:none;padding:.85rem 2.2rem;border-radius:10px;font-size:1rem;font-weight:500;cursor:pointer;box-shadow:0 0 30px rgba(124,58,237,.35)}
+.lp-btn-secondary{background:rgba(255,255,255,.06);color:#c4b5fd;border:1px solid rgba(124,58,237,.3);padding:.85rem 2.2rem;border-radius:10px;font-size:1rem;cursor:pointer}
+.lp-stats{display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap}
+.lp-stat{text-align:center}
+.lp-stat-num{font-family:'Syne',sans-serif;font-size:1.8rem;font-weight:700;color:#fff}
+.lp-stat-label{font-size:.8rem;color:#6b6883;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.lp-divider{width:1px;height:40px;background:rgba(255,255,255,.1)}
+.lp-section{padding:5rem 2rem;max-width:1000px;margin:0 auto}
+.lp-section-label{font-size:.75rem;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:#7c3aed;text-align:center;margin-bottom:.75rem}
+.lp-section-title{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.6rem);font-weight:700;text-align:center;color:#fff;margin:0 0 1rem}
+.lp-section-sub{text-align:center;color:#6b6883;font-size:1rem;margin-bottom:3.5rem;max-width:480px;margin-left:auto;margin-right:auto;line-height:1.7}
+.lp-steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem}
+.lp-step{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:2rem 1.75rem}
+.lp-step-num{font-family:'Syne',sans-serif;font-size:.7rem;font-weight:700;letter-spacing:.1em;color:#7c3aed;text-transform:uppercase;margin-bottom:.75rem}
+.lp-step h3{font-family:'Syne',sans-serif;font-size:1.1rem;font-weight:600;color:#fff;margin:0 0 .5rem}
+.lp-step p{font-size:.9rem;color:#6b6883;line-height:1.65;margin:0}
+.lp-features{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.25rem;margin-top:1rem}
+.lp-feature{background:rgba(124,58,237,.06);border:1px solid rgba(124,58,237,.15);border-radius:12px;padding:1.5rem}
+.lp-feature-icon{font-size:1.5rem;margin-bottom:.75rem}
+.lp-feature h4{font-family:'Syne',sans-serif;font-size:.95rem;font-weight:600;color:#e8e6f0;margin:0 0 .4rem}
+.lp-feature p{font-size:.82rem;color:#6b6883;line-height:1.6;margin:0}
+.lp-pricing{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1.5rem;max-width:680px;margin:0 auto}
+.lp-plan{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem}
+.lp-plan.featured{background:rgba(124,58,237,.1);border-color:rgba(124,58,237,.4);position:relative}
+.lp-plan-badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,#7c3aed,#4f46e5);color:white;font-size:.7rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:.25rem .85rem;border-radius:999px;white-space:nowrap}
+.lp-plan-name{font-family:'Syne',sans-serif;font-size:1rem;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem}
+.lp-plan-price{font-family:'Syne',sans-serif;font-size:2.8rem;font-weight:800;color:#fff;line-height:1;margin-bottom:.25rem}
+.lp-plan-price span{font-size:1rem;font-weight:400;color:#6b6883}
+.lp-plan-desc{font-size:.85rem;color:#6b6883;margin-bottom:1.5rem}
+.lp-plan ul{list-style:none;padding:0;margin:0}
+.lp-plan ul li{font-size:.88rem;color:#9b97b2;padding:.4rem 0;border-bottom:1px solid rgba(255,255,255,.05);display:flex;align-items:center;gap:.5rem}
+.lp-plan ul li:last-child{border-bottom:none}
+.lp-check{color:#7c3aed;font-weight:700}
+.lp-footer-cta{text-align:center;padding:5rem 2rem;background:radial-gradient(ellipse 60% 80% at 50% 100%,#1a1040 0%,#0a0a12 70%)}
+.lp-footer-cta h2{font-family:'Syne',sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;color:#fff;margin-bottom:1rem}
+.lp-footer-cta p{color:#6b6883;font-size:1rem;margin-bottom:2rem}
+</style>
+<div class="lp-wrap">
+<div class="lp-hero">
+<div class="lp-badge">AI-Powered Data Analysis</div>
+<h1 class="lp-h1">Find Hidden Problems in Your Data — Instantly</h1>
+<p class="lp-sub">Upload any CSV or Excel file. Our AI scans for outliers, suspicious patterns, and data quality issues in seconds.</p>
+<div class="lp-cta-row">
+<button class="lp-btn-primary">Start for Free</button>
+<button class="lp-btn-secondary">Sign In</button>
+</div>
+<div class="lp-stats">
+<div class="lp-stat"><div class="lp-stat-num">5,138+</div><div class="lp-stat-label">Analyses Run</div></div>
+<div class="lp-divider"></div>
+<div class="lp-stat"><div class="lp-stat-num">Free</div><div class="lp-stat-label">To Start</div></div>
+<div class="lp-divider"></div>
+<div class="lp-stat"><div class="lp-stat-num">&lt;30s</div><div class="lp-stat-label">Per Analysis</div></div>
+</div>
+</div>
+<div class="lp-section">
+<div class="lp-section-label">How It Works</div>
+<h2 class="lp-section-title">Three steps to clean data</h2>
+<p class="lp-section-sub">No data science degree required. Just upload and let the AI do the work.</p>
+<div class="lp-steps">
+<div class="lp-step"><div class="lp-step-num">Step 01</div><h3>Upload Your File</h3><p>Drag and drop any CSV or Excel file. Works with sales data, financial records, inventory, customer lists — anything.</p></div>
+<div class="lp-step"><div class="lp-step-num">Step 02</div><h3>AI Scans for Issues</h3><p>Our AI analyzes your data for outliers, missing values, duplicate entries, suspicious spikes, and pattern breaks.</p></div>
+<div class="lp-step"><div class="lp-step-num">Step 03</div><h3>Get a Clear Report</h3><p>Receive a plain-English summary of every problem found, ranked by severity so you know what to fix first.</p></div>
+</div>
+</div>
+<div class="lp-section" style="padding-top:0">
+<div class="lp-section-label">Features</div>
+<h2 class="lp-section-title">Everything you need</h2>
+<p class="lp-section-sub">Built for business owners, analysts, and anyone who works with data.</p>
+<div class="lp-features">
+<div class="lp-feature"><div class="lp-feature-icon">⚡</div><h4>Instant Results</h4><p>Full analysis in under 30 seconds, no matter the file size.</p></div>
+<div class="lp-feature"><div class="lp-feature-icon">🧠</div><h4>AI-Powered</h4><p>Claude AI understands context, not just numbers.</p></div>
+<div class="lp-feature"><div class="lp-feature-icon">📊</div><h4>CSV & Excel</h4><p>Works with all common spreadsheet formats out of the box.</p></div>
+<div class="lp-feature"><div class="lp-feature-icon">🔒</div><h4>Secure</h4><p>Your data is never stored or shared with anyone.</p></div>
+</div>
+</div>
+<div class="lp-section" style="padding-top:0">
+<div class="lp-section-label">Pricing</div>
+<h2 class="lp-section-title">Simple, honest pricing</h2>
+<p class="lp-section-sub">Start free. Upgrade when you need more.</p>
+<div class="lp-pricing">
+<div class="lp-plan"><div class="lp-plan-name">Free</div><div class="lp-plan-price">$0</div><div class="lp-plan-desc">Perfect for trying it out</div><ul><li><span class="lp-check">✓</span>5 analyses</li><li><span class="lp-check">✓</span>CSV & Excel support</li><li><span class="lp-check">✓</span>Full AI report</li></ul></div>
+<div class="lp-plan featured"><div class="lp-plan-badge">Most Popular</div><div class="lp-plan-name">Pro</div><div class="lp-plan-price">$9<span>/month</span></div><div class="lp-plan-desc">For serious data work</div><ul><li><span class="lp-check">✓</span>Unlimited analyses</li><li><span class="lp-check">✓</span>CSV & Excel support</li><li><span class="lp-check">✓</span>Full AI report</li><li><span class="lp-check">✓</span>Priority support</li></ul></div>
+</div>
+</div>
+<div class="lp-footer-cta">
+<h2>Ready to find what's hiding in your data?</h2>
+<p>Join hundreds of analysts and business owners who trust Anomaly Detector.</p>
+<button class="lp-btn-primary" style="font-size:1.05rem;padding:1rem 2.5rem">Get Started Free</button>
+</div>
+</div>
+"""
+
 FREE_LIMIT = 5
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
     st.session_state.username = ""
     st.session_state.name = ""
+
+if not st.session_state.logged_in:
+    st.markdown(LANDING_PAGE_HTML, unsafe_allow_html=True)
 
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "Login"
