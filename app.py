@@ -349,7 +349,7 @@ if st.session_state.logged_in:
                         message = client.messages.create(
                             model="claude-sonnet-4-6",
                             max_tokens=1500,
-                            messages=[{"role": "user", "content": f"You are a data analyst. Analyze this data for anomalies.\n\nSummary:\n{data_summary}\n\nSample:\n{data_sample}\n\nFind unusual spikes, outliers, data quality issues. Be specific about row numbers. Write in plain English."}],
+                            messages=[{"role": "user", "content": f"You are a senior data analyst writing a professional anomaly report. Analyze this data carefully.\n\nSummary:\n{data_summary}\n\nSample:\n{data_sample}\n\nFor each anomaly found:\n1. Give it a clear descriptive title\n2. State exactly what is wrong with specific numbers\n3. Explain WHY it is Critical, High, or Medium severity - what is the specific business risk or impact\n4. Suggest what likely caused it\n5. Recommend a concrete next step\n\nSeverity guide:\n- Critical: could indicate fraud, major error, or significant financial/operational risk\n- High: unusual pattern that needs investigation soon\n- Medium: worth reviewing but lower immediate risk\n\nEnd with a Summary Table and What To Do Next section. Be specific, use actual numbers from the data, write in plain English."}],
                         )
                     st.markdown("### 🧠 Anomaly Report")
                     st.markdown(message.content[0].text)
