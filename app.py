@@ -147,8 +147,7 @@ LANDING_PAGE_HTML = """
 <h1 class="lp-h1">Find Hidden Problems in Your Data — Instantly</h1>
 <p class="lp-sub">Upload any CSV or Excel file. Our AI scans for outliers, suspicious patterns, and data quality issues in seconds.</p>
 <div class="lp-cta-row">
-<button class="lp-btn-primary">Start for Free</button>
-<button class="lp-btn-secondary">Sign In</button>
+<p style="color:#a78bfa;font-size:1rem">Scroll down to get started ↓</p>
 </div>
 <div class="lp-stats">
 <div class="lp-stat"><div class="lp-stat-num">5,138+</div><div class="lp-stat-label">Analyses Run</div></div>
