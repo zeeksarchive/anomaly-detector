@@ -205,6 +205,15 @@ if "logged_in" not in st.session_state:
 
 if not st.session_state.logged_in:
     st.markdown(LANDING_PAGE_HTML, unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        if st.button("🚀 Get Started Free", use_container_width=True, key="landing_signup"):
+            st.session_state.auth_mode = "Sign Up"
+            st.rerun()
+        if st.button("Sign In", use_container_width=True, key="landing_login"):
+            st.session_state.auth_mode = "Login"
+            st.rerun()
+    st.stop()
 
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "Login"
