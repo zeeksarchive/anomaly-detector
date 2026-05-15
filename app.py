@@ -189,9 +189,8 @@ LANDING_PAGE_HTML = """
 </div>
 </div>
 <div class="lp-footer-cta">
-<h2>Ready to find what's hiding in your data?</h2>
+<p style="font-family:Syne,sans-serif;font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;color:#fff;margin-bottom:1rem">Ready to find what's hiding in your data?</p>
 <p>Join hundreds of analysts and business owners who trust Anomaly Detector.</p>
-<button class="lp-btn-primary" style="font-size:1.05rem;padding:1rem 2.5rem">Get Started Free</button>
 </div>
 </div>
 """
