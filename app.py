@@ -5,6 +5,7 @@ import yaml
 from yaml.loader import SafeLoader
 import os
 import bcrypt
+import stripe
 
 st.set_page_config(page_title="Anomaly Detector", page_icon="🔍", layout="wide")
 
@@ -19,11 +20,12 @@ header {visibility: hidden;}
 .hero h1 {font-size: 3rem; color: white; margin-bottom: 0.5rem;}
 .hero p {font-size: 1.2rem; color: #a0aec0; max-width: 600px; margin: 0 auto 1rem;}
 div[data-testid="stRadio"] > div {display: flex; gap: 0; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; border: 1px solid #0f3460;}
-div[data-testid="stRadio"] label {flex: 1; text-align: center; padding: 0.6rem 1.5rem; cursor: pointer; color: white; background: #16213e; border: none; margin: 0;}
+div[data-testid="stRadio"] label {flex: 1; text-align: center; padding: 0.6rem 1.5rem; cursor: pointer; color: white; background: #16213e; border: none; margin: 0; white-space: nowrap !important;}
 div[data-testid="stRadio"] label:has(input:checked) {background: #0f3460; font-weight: bold;}
 div[data-testid="stRadio"] input {display: none !important;}
-div[data-testid="stRadio"] label {white-space: nowrap !important;}
 </style>""", unsafe_allow_html=True)
+
+stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
 
 CONFIG_FILE = os.path.join(os.path.dirname(__file__), "config.yaml")
 
@@ -45,8 +47,35 @@ if "logged_in" not in st.session_state:
 if "auth_mode" not in st.session_state:
     st.session_state.auth_mode = "Login"
 
+def save_config():
+    with open(CONFIG_FILE, "w") as f:
+        yaml.dump(config, f)
+
+def get_user(username):
+    return config["users"].get(username, {})
+
+def is_paid(username):
+    return get_user(username).get("paid", False)
+
+def get_uses(username):
+    return get_user(username).get("uses", 0)
+
+def increment_uses(username):
+    config["users"][username]["uses"] = get_uses(username) + 1
+    save_config()
+
+FREE_LIMIT = 5
+
 if st.session_state.logged_in:
+    username = st.session_state.username
+    uses = get_uses(username)
+    paid = is_paid(username)
+
     st.sidebar.write(f"Welcome, {st.session_state.name}!")
+    if not paid:
+        st.sidebar.info(f"Free uses: {uses}/{FREE_LIMIT}")
+    else:
+        st.sidebar.success("Pro Member ✓")
     if st.sidebar.button("Logout"):
         st.session_state.logged_in = False
         st.session_state.username = ""
@@ -68,77 +97,104 @@ if st.session_state.logged_in:
 **3. Negative quantities in rows 112-115:** Four orders show negative item counts.""")
 
     st.markdown("---")
-    uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"])
 
-    if uploaded_file:
-        if uploaded_file.name.endswith(".csv"):
-            df = pd.read_csv(uploaded_file)
-        else:
-            df = pd.read_excel(uploaded_file)
-
-        st.write("### Your Data", df)
-
-        if st.button("🔍 Detect Anomalies"):
-            with st.spinner("Analyzing your data for anomalies..."):
-                client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
-                data_summary = df.describe().to_string()
-                data_sample = df.head(50).to_string()
-                message = client.messages.create(
-                    model="claude-sonnet-4-6",
-                    max_tokens=1500,
-                    messages=[{"role": "user", "content": f"You are a data analyst. Analyze this data for anomalies.\n\nSummary:\n{data_summary}\n\nSample:\n{data_sample}\n\nFind unusual spikes, outliers, data quality issues. Be specific about row numbers. Write in plain English."}],
+    if not paid and uses >= FREE_LIMIT:
+        st.warning("You've used all 5 free analyses. Upgrade to Pro for unlimited access!")
+        st.markdown("### 🔓 Upgrade to Anomaly Detector Pro")
+        st.markdown("**$9/month** — Unlimited anomaly detection")
+        if st.button("💳 Upgrade Now — $9/month", use_container_width=True):
+            try:
+                session = stripe.checkout.Session.create(
+                    payment_method_types=["card"],
+                    line_items=[{"price": st.secrets["STRIPE_PRICE_ID"], "quantity": 1}],
+                    mode="subscription",
+                    success_url="https://anomaly-detector-ai.streamlit.app/?paid=true&user=" + username,
+                    cancel_url="https://anomaly-detector-ai.streamlit.app/",
+                    client_reference_id=username,
                 )
-                st.write("### 🔍 Anomaly Report")
-                st.write(message.content[0].text)
+                st.markdown(f'<meta http-equiv="refresh" content="0; url={session.url}">', unsafe_allow_html=True)
+                st.markdown(f"[Click here if not redirected]({session.url})")
+            except Exception as e:
+                st.error(f"Error: {str(e)}")
+    else:
+        params = st.query_params
+        if params.get("paid") == "true" and params.get("user") == username:
+            config["users"][username]["paid"] = True
+            save_config()
+            st.success("Payment successful! You now have unlimited access.")
+            st.query_params.clear()
+            st.rerun()
+
+        uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"])
+
+        if uploaded_file:
+            if uploaded_file.name.endswith(".csv"):
+                df = pd.read_csv(uploaded_file)
+            else:
+                df = pd.read_excel(uploaded_file)
+
+            st.write("### Your Data", df)
+
+            if st.button("🔍 Detect Anomalies"):
+                if not paid and uses >= FREE_LIMIT:
+                    st.error("You've reached the free limit. Please upgrade.")
+                else:
+                    with st.spinner("Analyzing your data for anomalies..."):
+                        increment_uses(username)
+                        client = anthropic.Anthropic(api_key=st.secrets["ANTHROPIC_API_KEY"])
+                        data_summary = df.describe().to_string()
+                        data_sample = df.head(50).to_string()
+                        message = client.messages.create(
+                            model="claude-sonnet-4-6",
+                            max_tokens=1500,
+                            messages=[{"role": "user", "content": f"You are a data analyst. Analyze this data for anomalies.\n\nSummary:\n{data_summary}\n\nSample:\n{data_sample}\n\nFind unusual spikes, outliers, data quality issues. Be specific about row numbers. Write in plain English."}],
+                        )
+                    st.markdown("### 🧠 Anomaly Report")
+                    st.markdown(message.content[0].text)
+                    if not paid:
+                        remaining = FREE_LIMIT - get_uses(username)
+                        if remaining > 0:
+                            st.info(f"You have {remaining} free analyses remaining.")
+                        else:
+                            st.warning("That was your last free analysis! Upgrade to Pro for unlimited access.")
 
 else:
     st.markdown("""<div class="hero">
 <h1>🔍 Anomaly Detector</h1>
-<p>AI-powered data analysis. Upload any spreadsheet and instantly find what doesn't look right.</p>
+<p>Upload any CSV or Excel file and AI instantly finds outliers, suspicious patterns, and data quality issues.</p>
 </div>""", unsafe_allow_html=True)
 
-    col1, col2, col3 = st.columns([1, 1.2, 1])
-    with col2:
-        mode = st.radio("", ["Login", "Sign Up"], horizontal=True, label_visibility="collapsed", index=0 if st.session_state.auth_mode == "Login" else 1, key="auth_radio")
-        st.session_state.auth_mode = mode
+    mode = st.radio("", ["Login", "Sign Up"], horizontal=True)
 
-        if mode == "Login":
-            st.markdown("### Welcome back")
-            username = st.text_input("Username")
-            password = st.text_input("Password", type="password")
-            if st.button("Login", use_container_width=True):
-                users = config.get("users", {})
-                if username in users:
-                    stored = users[username]["password"].encode()
-                    if bcrypt.checkpw(password.encode(), stored):
-                        with st.spinner("Logging in..."):
-                            st.session_state.logged_in = True
-                            st.session_state.username = username
-                            st.session_state.name = users[username]["name"]
-                        st.rerun()
-                    else:
-                        st.error("Incorrect password")
-                else:
-                    st.error("Username not found")
+    if mode == "Login":
+        st.subheader("Login")
+        username = st.text_input("Username", key="login_user")
+        password = st.text_input("Password", type="password", key="login_pass")
+        if st.button("Login", use_container_width=True):
+            user = config["users"].get(username)
+            if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.session_state.name = user.get("name", username)
+                st.rerun()
+            else:
+                st.error("Invalid username or password.")
 
-        else:
-            st.markdown("### Create an account")
-            new_name = st.text_input("Full Name")
-            new_username = st.text_input("Username")
-            new_password = st.text_input("Password", type="password")
-            new_password2 = st.text_input("Confirm Password", type="password")
-            if st.button("Sign Up", use_container_width=True):
-                if not new_name or not new_username or not new_password:
-                    st.error("Please fill in all fields")
-                elif new_password != new_password2:
-                    st.error("Passwords do not match")
-                elif new_username in config["users"]:
-                    st.error("Username already taken")
-                else:
-                    hashed = bcrypt.hashpw(new_password.encode(), bcrypt.gensalt()).decode()
-                    config["users"][new_username] = {"name": new_name, "password": hashed}
-                    with open(CONFIG_FILE, "w") as f:
-                        yaml.dump(config, f)
-                    st.success("Account created! Redirecting to login...")
-                    st.session_state.auth_mode = "Login"
-                    st.rerun()
+    else:
+        st.subheader("Create Account")
+        name = st.text_input("Full Name", key="signup_name")
+        username = st.text_input("Username", key="signup_user")
+        password = st.text_input("Password", type="password", key="signup_pass")
+        if st.button("Create Account", use_container_width=True):
+            if username in config["users"]:
+                st.error("Username already exists.")
+            elif not username or not password or not name:
+                st.error("Please fill in all fields.")
+            else:
+                hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                config["users"][username] = {"name": name, "password": hashed, "uses": 0, "paid": False}
+                save_config()
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.session_state.name = name
+                st.rerun()
