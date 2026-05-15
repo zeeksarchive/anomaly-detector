@@ -32,10 +32,6 @@ header {visibility: hidden;}
 .pricing-box .price span {font-size: 1rem; color: #a0aec0;}
 .pricing-box ul {list-style: none; padding: 0; color: #a0aec0; margin: 1rem 0;}
 .pricing-box ul li {padding: 0.3rem 0;}
-div[data-testid="stRadio"] > div {display: flex; gap: 0; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; border: 1px solid #0f3460;}
-div[data-testid="stRadio"] label {flex: 1; text-align: center; padding: 0.6rem 1.5rem; cursor: pointer; color: white; background: #16213e; border: none; margin: 0; white-space: nowrap !important;}
-div[data-testid="stRadio"] label:has(input:checked) {background: #0f3460; font-weight: bold;}
-div[data-testid="stRadio"] input {display: none !important;}
 .stButton > button {background: linear-gradient(135deg, #7c3aed, #4f46e5) !important; color: white !important; border: none !important; border-radius: 8px !important; font-weight: bold !important; font-size: 1rem !important;}
 .stButton > button:hover {background: linear-gradient(135deg, #6d28d9, #4338ca) !important; color: white !important;}
 [data-testid="stFileUploader"] {border: 2px dashed #7c3aed !important; border-radius: 12px !important; padding: 1rem !important;}
@@ -188,7 +184,7 @@ else:
     st.markdown("""<div class="feature-grid">
 <div class="feature-card">
 <h4>⚡ Instant Analysis</h4>
-<p>Upload your file and get a full anomaly report in seconds powered by Claude AI.</p>
+<p>Upload your file and get a full anomaly report in seconds.</p>
 </div>
 <div class="feature-card">
 <h4>📊 Any Data Format</h4>
@@ -207,20 +203,27 @@ else:
 <li>5 free analyses to start</li>
 <li>Unlimited analyses with Pro</li>
 <li>CSV & Excel support</li>
-
 <li>Cancel anytime</li>
 </ul>
 </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
 
-    mode = st.radio("", ["Login", "Sign Up"], horizontal=True)
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Login", use_container_width=True, key="tab_login"):
+            st.session_state.auth_mode = "Login"
+    with col2:
+        if st.button("Sign Up", use_container_width=True, key="tab_signup"):
+            st.session_state.auth_mode = "Sign Up"
+
+    mode = st.session_state.auth_mode
 
     if mode == "Login":
         st.subheader("Login")
         username = st.text_input("Username", key="login_user")
         password = st.text_input("Password", type="password", key="login_pass")
-        if st.button("Login", use_container_width=True):
+        if st.button("Login", use_container_width=True, key="login_submit"):
             user = config["users"].get(username)
             if user and bcrypt.checkpw(password.encode(), user["password"].encode()):
                 st.session_state.logged_in = True
@@ -235,7 +238,7 @@ else:
         name = st.text_input("Full Name", key="signup_name")
         username = st.text_input("Username", key="signup_user")
         password = st.text_input("Password", type="password", key="signup_pass")
-        if st.button("Create Account", use_container_width=True):
+        if st.button("Create Account", use_container_width=True, key="signup_submit"):
             if username in config["users"]:
                 st.error("Username already exists.")
             elif not username or not password or not name:
