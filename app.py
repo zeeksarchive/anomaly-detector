@@ -26,12 +26,19 @@ header {visibility: hidden;}
 .feature-card {background: #16213e; border-radius: 12px; padding: 1.5rem; border: 1px solid #0f3460; text-align: center;}
 .feature-card h4 {color: white; margin-bottom: 0.5rem;}
 .feature-card p {color: #a0aec0; font-size: 0.9rem;}
+.pricing-box {background: #16213e; border-radius: 16px; padding: 2rem; text-align: center; border: 1px solid #0f3460; margin: 2rem 0;}
+.pricing-box h3 {color: white; font-size: 1.5rem; margin-bottom: 0.5rem;}
+.pricing-box .price {font-size: 3rem; color: #7c3aed; font-weight: bold;}
+.pricing-box .price span {font-size: 1rem; color: #a0aec0;}
+.pricing-box ul {list-style: none; padding: 0; color: #a0aec0; margin: 1rem 0;}
+.pricing-box ul li {padding: 0.3rem 0;}
 div[data-testid="stRadio"] > div {display: flex; gap: 0; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; border: 1px solid #0f3460;}
 div[data-testid="stRadio"] label {flex: 1; text-align: center; padding: 0.6rem 1.5rem; cursor: pointer; color: white; background: #16213e; border: none; margin: 0; white-space: nowrap !important;}
 div[data-testid="stRadio"] label:has(input:checked) {background: #0f3460; font-weight: bold;}
 div[data-testid="stRadio"] input {display: none !important;}
-.stButton > button {background: linear-gradient(135deg, #7c3aed, #4f46e5); color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 1rem;}
-.stButton > button:hover {background: linear-gradient(135deg, #6d28d9, #4338ca); color: white;}
+.stButton > button {background: linear-gradient(135deg, #7c3aed, #4f46e5) !important; color: white !important; border: none !important; border-radius: 8px !important; font-weight: bold !important; font-size: 1rem !important;}
+.stButton > button:hover {background: linear-gradient(135deg, #6d28d9, #4338ca) !important; color: white !important;}
+[data-testid="stFileUploader"] {border: 2px dashed #7c3aed !important; border-radius: 12px !important; padding: 1rem !important;}
 </style>""", unsafe_allow_html=True)
 
 stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
@@ -80,6 +87,8 @@ if st.session_state.logged_in:
     uses = get_uses(username)
     paid = is_paid(username)
 
+    st.sidebar.markdown("## 🔍 Anomaly Detector")
+    st.sidebar.markdown("---")
     st.sidebar.write(f"Welcome, **{st.session_state.name}**!")
     if not paid:
         st.sidebar.info(f"Free uses: {uses}/{FREE_LIMIT}")
@@ -137,7 +146,7 @@ if st.session_state.logged_in:
             st.query_params.clear()
             st.rerun()
 
-        uploaded_file = st.file_uploader("Upload a CSV or Excel file", type=["csv", "xlsx"])
+        uploaded_file = st.file_uploader("📂 Upload a CSV or Excel file", type=["csv", "xlsx"])
 
         if uploaded_file:
             if uploaded_file.name.endswith(".csv"):
@@ -189,6 +198,18 @@ else:
 <h4>🎯 Plain English Reports</h4>
 <p>No jargon. Clear, specific findings with exact row numbers.</p>
 </div>
+</div>""", unsafe_allow_html=True)
+
+    st.markdown("""<div class="pricing-box">
+<h3>Simple Pricing</h3>
+<div class="price">$9<span>/month</span></div>
+<ul>
+<li>✅ 5 free analyses to start</li>
+<li>✅ Unlimited analyses with Pro</li>
+<li>✅ CSV & Excel support</li>
+<li>✅ AI-powered by Claude</li>
+<li>✅ Cancel anytime</li>
+</ul>
 </div>""", unsafe_allow_html=True)
 
     st.markdown("---")
