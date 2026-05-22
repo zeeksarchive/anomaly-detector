@@ -173,7 +173,7 @@ LANDING_PAGE_HTML = """
 <p class="lp-section-sub">Built for business owners, analysts, and anyone who works with data.</p>
 <div class="lp-features">
 <div class="lp-feature"><div class="lp-feature-icon">⚡</div><h4>Instant Results</h4><p>Full analysis in under 30 seconds, no matter the file size.</p></div>
-<div class="lp-feature"><div class="lp-feature-icon">🧠</div><h4>AI-Powered</h4><p>Claude AI understands context, not just numbers.</p></div>
+<div class="lp-feature"><div class="lp-feature-icon">🧠</div><h4>AI-Powered</h4><p>Our AI understands context, not just numbers.</p></div>
 <div class="lp-feature"><div class="lp-feature-icon">📊</div><h4>CSV & Excel</h4><p>Works with all common spreadsheet formats out of the box.</p></div>
 <div class="lp-feature"><div class="lp-feature-icon">🔒</div><h4>Secure</h4><p>Your data is never stored or shared with anyone.</p></div>
 </div>
