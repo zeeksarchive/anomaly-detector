@@ -41,6 +41,14 @@ header {visibility: hidden;}
 .stButton > button {background: linear-gradient(135deg, #7c3aed, #4f46e5) !important; color: white !important; border: none !important; border-radius: 8px !important; font-weight: bold !important; font-size: 1rem !important;}
 .stButton > button:hover {background: linear-gradient(135deg, #6d28d9, #4338ca) !important; color: white !important;}
 [data-testid="stFileUploader"] {border: 2px dashed #7c3aed !important; border-radius: 12px !important; padding: 1rem !important;}
+
+@media (max-width: 768px) {
+  .hero h1 {font-size: 1.8rem;}
+  .hero p {font-size: 1rem;}
+  .stButton > button {width: 100%; margin-bottom: 0.5rem;}
+  .feature-grid {grid-template-columns: 1fr;}
+  .stat-card {margin-bottom: 0.5rem;}
+}
 </style>""", unsafe_allow_html=True)
 
 stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
