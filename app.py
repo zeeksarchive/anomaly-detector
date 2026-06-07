@@ -55,6 +55,18 @@ body, html {overflow-x: hidden; max-width: 100vw;}
 .hero {padding: 2rem 1rem; overflow-x: hidden;}
 .hero p {max-width: 100%; padding: 0 1rem;}
 .stat-grid {grid-template-columns: repeat(3, 1fr); overflow: hidden;}
+
+@media (max-width: 480px) {
+  .lp-hero {padding: 2rem 1rem;}
+  .lp-title {font-size: clamp(1.8rem,8vw,3rem);}
+  .lp-sub {font-size: 1rem; padding: 0 0.5rem;}
+  .lp-buttons {flex-direction: column; width: 100%; align-items: stretch;}
+  .lp-btn-primary, .lp-btn-secondary {width: 100%; text-align: center; margin: 0.3rem 0;}
+  .lp-stats {flex-direction: column; align-items: center;}
+  .lp-stat {width: 100%;}
+  .lp-pricing {grid-template-columns: 1fr;}
+  .lp-feature {grid-template-columns: 1fr;}
+}
 </style>""", unsafe_allow_html=True)
 
 stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
