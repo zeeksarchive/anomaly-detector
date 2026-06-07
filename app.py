@@ -49,6 +49,12 @@ header {visibility: hidden;}
   .feature-grid {grid-template-columns: 1fr;}
   .stat-card {margin-bottom: 0.5rem;}
 }
+
+* {box-sizing: border-box;}
+body, html {overflow-x: hidden; max-width: 100vw;}
+.hero {padding: 2rem 1rem; overflow-x: hidden;}
+.hero p {max-width: 100%; padding: 0 1rem;}
+.stat-grid {grid-template-columns: repeat(3, 1fr); overflow: hidden;}
 </style>""", unsafe_allow_html=True)
 
 stripe.api_key = st.secrets["STRIPE_SECRET_KEY"]
